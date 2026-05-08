@@ -483,6 +483,29 @@ function svgToPNG(svgString, pxW, pxH){
   });
 }
 
+/* Rotaciona PNG 90° sentido horário (landscape → portrait para PDF da QL-800) */
+function rotatePNG90CW(pngDataURL, origW, origH){
+  return new Promise((resolve, reject) => {
+    try{
+      const img = new Image();
+      img.onload = function(){
+        const canvas = document.createElement('canvas');
+        canvas.width = origH;   // swapped
+        canvas.height = origW;  // swapped
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.translate(origH, 0);
+        ctx.rotate(Math.PI / 2);
+        ctx.drawImage(img, 0, 0, origW, origH);
+        resolve(canvas.toDataURL('image/png'));
+      };
+      img.onerror = function(e){ reject(e); };
+      img.src = pngDataURL;
+    }catch(e){ reject(e); }
+  });
+}
+
 /* ═══════════════════════════════════════════════════════════════════
    DOWNLOAD HELPER — múltiplas estratégias + fallback inline garantido
    ═══════════════════════════════════════════════════════════════════ */
@@ -760,8 +783,11 @@ async function onDownloadPDF(format){
     let pdf, filename;
 
     if (format === '150x62'){
-      pdf = new jsPDF({ orientation:'landscape', unit:'mm', format:[rW, rH] });
-      pdf.addImage(pngB64, 'PNG', 0, 0, rW, rH, undefined, 'FAST');
+      // PDF em retrato: largura = altura do rolo (ex: 62mm), comprimento = largura do sticker
+      // Isso casa com o driver da Brother QL-800 que usa a largura do rolo como paper width
+      const rotatedPng = await rotatePNG90CW(pngB64, rPxW, rPxH);
+      pdf = new jsPDF({ orientation:'portrait', unit:'mm', format:[rH, rW] });
+      pdf.addImage(rotatedPng, 'PNG', 0, 0, rH, rW, undefined, 'FAST');
       filename = `GS_Oleo_${data.placa}_${roll.name}_${rW}x${rH}mm.pdf`;
     } else {
       pdf = new jsPDF({ orientation:'landscape', unit:'mm', format:'letter' });
@@ -838,9 +864,10 @@ async function onPrint(){
   try{
     const svg = generateSVG(data);
     const pngB64 = await svgToPNG(svg, rPxW, rPxH);
+    const rotatedPng = await rotatePNG90CW(pngB64, rPxW, rPxH);
     const { jsPDF } = window.jspdf;
-    const pdf = new jsPDF({ orientation:'landscape', unit:'mm', format:[rW, rH] });
-    pdf.addImage(pngB64, 'PNG', 0, 0, rW, rH, undefined, 'FAST');
+    const pdf = new jsPDF({ orientation:'portrait', unit:'mm', format:[rH, rW] });
+    pdf.addImage(rotatedPng, 'PNG', 0, 0, rH, rW, undefined, 'FAST');
 
     const blob = pdf.output('blob');
     const url = URL.createObjectURL(blob);
