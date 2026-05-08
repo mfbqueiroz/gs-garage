@@ -317,7 +317,7 @@ function getData(){
   const oleo    = $id('oleo').value;
   const visc    = $id('visc').value;
   const filtroV = document.querySelector('input[name="filtro"]:checked')?.value || 'sim';
-  const filtro  = filtroV === 'sim' ? '[X] SIM   [ ] NÃO' : '[ ] SIM   [X] NÃO';
+  const filtro  = filtroV === 'sim' ? 'SIM' : 'NÃO';
   return {
     placa, data,
     milhas:  milhasN ? `${milhasN} mi` : '',
