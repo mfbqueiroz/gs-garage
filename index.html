@@ -593,10 +593,6 @@ function showResult(blob, filename, isImage = true){
    ═══════════════════════════════════════════════════════════════════ */
 async function onDownloadQL800(){
   const data = getData();
-  if (!data.placa){
-    showToast('Preencha a placa primeiro', 'error');
-    return;
-  }
   const rollKey = getRollKey();
   const roll = DK_ROLLS[rollKey];
   showToast(`Gerando PNG nativo ${roll.name}…`);
@@ -711,10 +707,6 @@ function showQL800Result(blob, filename, placa, roll){
    ═══════════════════════════════════════════════════════════════════ */
 async function onDownloadPNG(){
   const data = getData();
-  if (!data.placa){
-    showToast('Preencha a placa primeiro', 'error');
-    return;
-  }
   showToast('Gerando imagem…');
   log(`onDownloadPNG: placa=${data.placa}`);
   try{
@@ -741,10 +733,6 @@ async function onDownloadPNG(){
    ═══════════════════════════════════════════════════════════════════ */
 async function onDownloadPDF(format){
   const data = getData();
-  if (!data.placa){
-    showToast('Preencha a placa primeiro', 'error');
-    return;
-  }
 
   if (!window.jspdf || !window._jspdfOK){
     log('jsPDF não disponível, usando fallback PNG', 'err');
@@ -753,35 +741,42 @@ async function onDownloadPDF(format){
     return;
   }
 
+  const rollKey = getRollKey();
+  const roll = DK_ROLLS[rollKey];
+  const rW = roll.w_mm;
+  const rH = roll.h_mm;
+  const rPxW = Math.round(rW / 25.4 * 300);
+  const rPxH = Math.round(rH / 25.4 * 300);
+
   showToast('Gerando PDF…');
-  log(`onDownloadPDF: format=${format}, placa=${data.placa}`);
+  log(`onDownloadPDF: format=${format}, placa=${data.placa}, roll=${roll.name} (${rW}×${rH}mm)`);
 
   try{
     const svg = generateSVG(data);
-    const pngB64 = await svgToPNG(svg, PX_W, PX_H);
+    const pngB64 = await svgToPNG(svg, rPxW, rPxH);
     log('PNG base gerado, montando PDF…');
 
     const { jsPDF } = window.jspdf;
     let pdf, filename;
 
     if (format === '150x62'){
-      pdf = new jsPDF({ orientation:'landscape', unit:'mm', format:[STICKER_W_MM, STICKER_H_MM] });
-      pdf.addImage(pngB64, 'PNG', 0, 0, STICKER_W_MM, STICKER_H_MM, undefined, 'FAST');
-      filename = `GS_Oleo_${data.placa}_150x62mm.pdf`;
+      pdf = new jsPDF({ orientation:'landscape', unit:'mm', format:[rW, rH] });
+      pdf.addImage(pngB64, 'PNG', 0, 0, rW, rH, undefined, 'FAST');
+      filename = `GS_Oleo_${data.placa}_${roll.name}_${rW}x${rH}mm.pdf`;
     } else {
       pdf = new jsPDF({ orientation:'landscape', unit:'mm', format:'letter' });
       const pW = pdf.internal.pageSize.getWidth();
       const pH = pdf.internal.pageSize.getHeight();
-      const sx = (pW - STICKER_W_MM) / 2;
-      const sy = (pH - STICKER_H_MM) / 2;
-      drawCropMarks(pdf, sx, sy, STICKER_W_MM, STICKER_H_MM);
-      pdf.addImage(pngB64, 'PNG', sx, sy, STICKER_W_MM, STICKER_H_MM, undefined, 'FAST');
+      const sx = (pW - rW) / 2;
+      const sy = (pH - rH) / 2;
+      drawCropMarks(pdf, sx, sy, rW, rH);
+      pdf.addImage(pngB64, 'PNG', sx, sy, rW, rH, undefined, 'FAST');
       pdf.setTextColor(136,136,136);
       pdf.setFont('helvetica','normal');
       pdf.setFontSize(7);
-      pdf.text(`GS GARAGE - Sticker Troca de Oleo · ${data.placa} · 150x62mm · imprimir 100% sem ajuste`, 8, 6);
+      pdf.text(`GS GARAGE - Sticker Troca de Oleo · ${data.placa} · ${roll.name} ${rW}x${rH}mm · imprimir 100% sem ajuste`, 8, 6);
       pdf.text('Recortar pelas marcas pretas dos cantos.', 8, pH - 5);
-      filename = `GS_Oleo_${data.placa}_Letter.pdf`;
+      filename = `GS_Oleo_${data.placa}_${roll.name}_Letter.pdf`;
     }
 
     log('PDF montado, gerando blob…');
@@ -826,23 +821,26 @@ function drawCropMarks(pdf, x, y, w, h){
    ═══════════════════════════════════════════════════════════════════ */
 async function onPrint(){
   const data = getData();
-  if (!data.placa){
-    showToast('Preencha a placa primeiro', 'error');
-    return;
-  }
 
   if (!window.jspdf || !window._jspdfOK){
     showToast('PDF indisponível. Baixe a IMAGEM PNG e imprima ela', 'error');
     return;
   }
 
+  const rollKey = getRollKey();
+  const roll = DK_ROLLS[rollKey];
+  const rW = roll.w_mm;
+  const rH = roll.h_mm;
+  const rPxW = Math.round(rW / 25.4 * 300);
+  const rPxH = Math.round(rH / 25.4 * 300);
+
   showToast('Preparando para imprimir…');
   try{
     const svg = generateSVG(data);
-    const pngB64 = await svgToPNG(svg, PX_W, PX_H);
+    const pngB64 = await svgToPNG(svg, rPxW, rPxH);
     const { jsPDF } = window.jspdf;
-    const pdf = new jsPDF({ orientation:'landscape', unit:'mm', format:[STICKER_W_MM, STICKER_H_MM] });
-    pdf.addImage(pngB64, 'PNG', 0, 0, STICKER_W_MM, STICKER_H_MM, undefined, 'FAST');
+    const pdf = new jsPDF({ orientation:'landscape', unit:'mm', format:[rW, rH] });
+    pdf.addImage(pngB64, 'PNG', 0, 0, rW, rH, undefined, 'FAST');
 
     const blob = pdf.output('blob');
     const url = URL.createObjectURL(blob);
