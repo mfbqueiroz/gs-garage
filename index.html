@@ -157,31 +157,33 @@ main{max-width:1280px;margin:0 auto;padding:24px 16px 80px;}
         </div>
         <div class="field">
           <label>Óleo utilizado</label>
-          <select id="oleo" onchange="render()">
-            <option>Mobil 1 Full Synth</option>
-            <option>Mobil 1 ESP 0W-40</option>
-            <option>Mobil 1 Truck &amp; SUV</option>
-            <option>Castrol Edge</option>
-            <option>Pennzoil Platinum</option>
-            <option>Valvoline Full Synth</option>
-            <option>Shell Helix Ultra</option>
-            <option>GM Dexos1</option>
-            <option>Tesla Service</option>
-            <option>OEM Dealer Oil</option>
-          </select>
+          <input id="oleo" type="text" list="oleo-list" placeholder="Ex: Mobil 1 Full Synth" oninput="render()">
+          <datalist id="oleo-list">
+            <option value="Mobil 1 Full Synth">
+            <option value="Mobil 1 ESP 0W-40">
+            <option value="Mobil 1 Truck &amp; SUV">
+            <option value="Castrol Edge">
+            <option value="Pennzoil Platinum">
+            <option value="Valvoline Full Synth">
+            <option value="Shell Helix Ultra">
+            <option value="GM Dexos1">
+            <option value="Tesla Service">
+            <option value="OEM Dealer Oil">
+          </datalist>
         </div>
         <div class="field">
           <label>Viscosidade</label>
-          <select id="visc" onchange="render()">
-            <option>0W-20</option>
-            <option>5W-20</option>
-            <option selected>5W-30</option>
-            <option>0W-40</option>
-            <option>10W-30</option>
-            <option>10W-40</option>
-            <option>5W-40</option>
-            <option>N/A</option>
-          </select>
+          <input id="visc" type="text" list="visc-list" placeholder="Ex: 5W-30" oninput="render()">
+          <datalist id="visc-list">
+            <option value="0W-20">
+            <option value="5W-20">
+            <option value="5W-30">
+            <option value="0W-40">
+            <option value="10W-30">
+            <option value="10W-40">
+            <option value="5W-40">
+            <option value="N/A">
+          </datalist>
         </div>
         <div class="field full">
           <label>Filtro de óleo trocado?</label>
