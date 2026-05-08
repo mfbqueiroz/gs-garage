@@ -186,8 +186,9 @@ main{max-width:1280px;margin:0 auto;padding:24px 16px 80px;}
         <div class="field full">
           <label>Filtro de óleo trocado?</label>
           <div class="radio-group">
-            <label><input type="radio" name="filtro" value="sim" checked onchange="render()"> SIM</label>
+            <label><input type="radio" name="filtro" value="sim" onchange="render()"> SIM</label>
             <label><input type="radio" name="filtro" value="nao" onchange="render()"> NÃO</label>
+            <label><input type="radio" name="filtro" value="" checked onchange="render()"> EM BRANCO</label>
           </div>
         </div>
       </div>
@@ -316,8 +317,8 @@ function getData(){
   const proxN   = fmtNum($id('proxima').value);
   const oleo    = $id('oleo').value;
   const visc    = $id('visc').value;
-  const filtroV = document.querySelector('input[name="filtro"]:checked')?.value || 'sim';
-  const filtro  = filtroV === 'sim' ? 'SIM' : 'NÃO';
+  const filtroV = document.querySelector('input[name="filtro"]:checked')?.value || '';
+  const filtro  = filtroV === 'sim' ? 'SIM' : filtroV === 'nao' ? 'NÃO' : '';
   return {
     placa, data,
     milhas:  milhasN ? `${milhasN} mi` : '',
@@ -449,7 +450,7 @@ function generateSVG_fullsize(data, roll){
 
 function render(){
   const data = { ...getData() };
-  if (!data.placa) data.placa = 'PLACA';
+  if (!data.placa) data.placa = '';
   $id('previewStage').innerHTML = generateSVG(data);
 }
 
@@ -864,7 +865,7 @@ async function onPrint(){
 function clearForm(){
   ['placa','milhas','proxima'].forEach(id => $id(id).value = '');
   $id('data').valueAsDate = new Date();
-  document.querySelector('input[name="filtro"][value="sim"]').checked = true;
+  document.querySelector('input[name="filtro"][value=""]').checked = true;
   $id('fallbackArea').classList.remove('show');
   saveState();
   render();
@@ -876,7 +877,7 @@ function saveState(){
     placa: $id('placa').value, data: $id('data').value,
     milhas: $id('milhas').value, proxima: $id('proxima').value,
     oleo: $id('oleo').value, visc: $id('visc').value,
-    filtro: document.querySelector('input[name="filtro"]:checked').value,
+    filtro: document.querySelector('input[name="filtro"]:checked')?.value || '',
   };
   try{ localStorage.setItem('gs_oleo_v2', JSON.stringify(state)); }catch(e){}
 }
@@ -890,7 +891,9 @@ function loadState(){
     if (s.proxima) $id('proxima').value = s.proxima;
     if (s.oleo)    $id('oleo').value = s.oleo;
     if (s.visc)    $id('visc').value = s.visc;
-    if (s.filtro)  document.querySelector(`input[name="filtro"][value="${s.filtro}"]`).checked = true;
+    const fv = s.filtro != null ? s.filtro : '';
+    const fel = document.querySelector(`input[name="filtro"][value="${fv}"]`);
+    if (fel) fel.checked = true;
   }catch(e){}
 }
 
